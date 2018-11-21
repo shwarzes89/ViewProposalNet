@@ -17,8 +17,8 @@ import glob
 
 def main(argv=None):
     gpu_id = 0
-    test_image_directory = './example_images'
-    image_format = 'jpg'
+    test_image_directory = './example_stoves'
+    image_format = 'png'
     image_list = glob.glob(os.path.join(test_image_directory, '*.{:s}'.format(image_format)))
     image_list.sort()
     result_save_directory = 'ProposalResults'
@@ -31,6 +31,9 @@ def main(argv=None):
 
 
     with tf.Graph().as_default():
+
+
+
         # not using batch yet
         with tf.variable_scope('inputs'):
             tf_image = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3], name='image_input')
@@ -47,12 +50,21 @@ def main(argv=None):
 
         with tf.Session(config=config) as sess:
             sess.run(tf.global_variables_initializer())
+
+            saver = tf.train.Saver()
+            saver.restore(sess, model_weight_path)
+
             init_fn(sess)
             # pbar = progressbar.ProgressBar(max_value=len(image_list))
             for id, s_image_path in enumerate(image_list):
                     s_image_name = os.path.basename(s_image_path)
                     # pbar.update(id)
-                    s_image = file_utils.default_image_loader(s_image_path)
+
+                    try:
+                        s_image = file_utils.default_image_loader(s_image_path)
+                    except IOError:
+                        continue
+
                     s_image_width, s_image_height = s_image.size
 
                     s_image_tensor = data_transform(s_image)
@@ -73,7 +85,7 @@ def main(argv=None):
                     scores_selected, bboxes_selected = boxes.sortNMSBBoxes(logits, s_bboxes, NMS_thres=0.6)#TODO: This is a tunable parameter
 
                     # TODO: only keep Top5
-                    topN = 5
+                    topN = 3
                     pick_n = min(topN, len(scores_selected))
                     image_annotation[s_image_name] = {}
                     image_annotation[s_image_name]['scores'] = scores_selected[0:pick_n]

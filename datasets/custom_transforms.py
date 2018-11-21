@@ -7,6 +7,8 @@ import numpy as np
 import numbers
 import types
 from torchvision import transforms
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
